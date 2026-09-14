@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="每日晨報：天氣、行程、待回信件、自選股與一節經文，整頁配色隨天氣變化。">
+<meta name="theme-color" content="#FBF2DE">
+<title>阿祥的晨報系統</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;800&display=swap">
+</head>
+<body>
+<style>
+  /* ── 預設色板：暖黃（晴、氣溫中高）。JS 會依當日天氣換掉 ── */
+  :root{
+    --bg:#FBF2DE; --panel:#FFFDF7; --panel-alt:#FFF8E8;
+    --edge:#EFD9A9; --hairline:#F2E4C4;
+    --ink:#5E4413; --ink-soft:#8A6A2C; --ink-grey:#AD9052;
+    --accent:#C98A2E; --accent-deep:#8A5F14; --warm:#F59A28;
+    --sky:#EFC878; --up:#C8452F; --down:#2E7D62;
+    --g:linear-gradient(168deg,#FFE3A4 0%,#FFF2D2 52%,#FFE0BC 100%); --gedge:#F2CE93;
+    --wink:#6B4310; --wsoft:#8A6224; --wlabel:#9A7434; --wrule:rgba(107,67,16,.14);
+    --sunf:#F59A28; --cloudf:#FFFDF6; --clouds:#C98A2E;
+    --sans:"Manrope",-apple-system,"Segoe UI","PingFang TC","Noto Sans TC",sans-serif;
+    --serif:"Songti TC","Noto Serif TC","Source Han Serif TC",Georgia,serif;
+  }
+  /* 炎熱 */
+  :root[data-sky="hot"]{
+    --bg:#FCEDE3; --panel:#FFFBF8; --panel-alt:#FFF4EC;
+    --edge:#EFC7AE; --hairline:#F5DCCC;
+    --ink:#68280F; --ink-soft:#94512F; --ink-grey:#B98164;
+    --accent:#D6532C; --accent-deep:#A93317; --warm:#E9873C;
+    --sky:#F0A97F; --up:#C8452F; --down:#2E7D62;
+    --g:linear-gradient(168deg,#F0A24F 0%,#E56A36 55%,#CE3F28 100%); --gedge:#C9532C;
+    --wink:#FFF6EE; --wsoft:#FBE4D3; --wlabel:#F7CDB4; --wrule:rgba(255,246,238,.28);
+    --sunf:#FFE9A8; --cloudf:#FFF3E6; --clouds:#B8402A;
+  }
+  /* 陰天 */
+  :root[data-sky="cloudy"]{
+    --bg:#EAECEE; --panel:#FAFBFC; --panel-alt:#F2F4F5;
+    --edge:#CDD3D8; --hairline:#DFE3E6;
+    --ink:#2F373E; --ink-soft:#5A646D; --ink-grey:#8B949C;
+    --accent:#6C767F; --accent-deep:#414A52; --warm:#9AA3AB;
+    --sky:#BCC4CB; --up:#C0442F; --down:#2E7D62;
+    --g:linear-gradient(168deg,#C4CBD2 0%,#DBE0E5 55%,#EDEFF1 100%); --gedge:#B3BBC3;
+    --wink:#333B43; --wsoft:#5A646D; --wlabel:#6C767F; --wrule:rgba(51,59,67,.14);
+    --sunf:#C9CFD5; --cloudf:#FAFBFC; --clouds:#7A848D;
+  }
+  /* 有雨 */
+  :root[data-sky="rain"]{
+    --bg:#E4EEF4; --panel:#FAFDFF; --panel-alt:#F1F7FB;
+    --edge:#BFD5E2; --hairline:#D8E5EE;
+    --ink:#12314A; --ink-soft:#40607A; --ink-grey:#7E9AB0;
+    --accent:#3F6580; --accent-deep:#22475F; --warm:#7FA8C4;
+    --sky:#A4C4D8; --up:#C0442F; --down:#2E7D62;
+    --g:linear-gradient(168deg,#7FA3BE 0%,#A6C3D6 52%,#D3E3EE 100%); --gedge:#7593AB;
+    --wink:#0F2B3F; --wsoft:#33556C; --wlabel:#42647B; --wrule:rgba(15,43,63,.16);
+    --sunf:#CBD9E2; --cloudf:#F7FBFD; --clouds:#3F6580;
+  }
+  /* 暴雨、雷雨 */
+  :root[data-sky="storm"]{
+    --bg:#0A1E33; --panel:#123049; --panel-alt:#163A57;
+    --edge:#1E4A6C; --hairline:#1C4260;
+    --ink:#EAF3FA; --ink-soft:#B4CDE0; --ink-grey:#7E9EB8;
+    --accent:#7FB6DC; --accent-deep:#A8D0EC; --warm:#F0C063;
+    --sky:#3D7099; --up:#FF8168; --down:#63D3A6;
+    --g:linear-gradient(168deg,#0E3255 0%,#17496F 52%,#22608A 100%); --gedge:#0C2A48;
+    --wink:#EEF6FC; --wsoft:#C3D9EA; --wlabel:#9FBFD6; --wrule:rgba(238,246,252,.24);
+    --sunf:#F0C063; --cloudf:#E8F2F9; --clouds:#0E3255;
+  }
+  /* 涼 */
+  :root[data-sky="cool"]{
+    --bg:#E6F3F8; --panel:#FBFEFF; --panel-alt:#F1F9FC;
+    --edge:#B8D9E6; --hairline:#D5EAF2;
+    --ink:#0F3B4C; --ink-soft:#356573; --ink-grey:#6C9AA8;
+    --accent:#3E7C90; --accent-deep:#1F5A6D; --warm:#79BFD4;
+    --sky:#9CD0E0; --up:#C0442F; --down:#2E7D62;
+    --g:linear-gradient(168deg,#C9E6F1 0%,#E2F1F7 55%,#F6FBFD 100%); --gedge:#AFD5E4;
+    --wink:#0F3B4C; --wsoft:#356573; --wlabel:#457383; --wrule:rgba(15,59,76,.13);
+    --sunf:#8FCADE; --cloudf:#FBFEFF; --clouds:#3E7C90;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink-soft);font-family:var(--sans);
+       font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased;
+       transition:background-color .9s ease,color .9s ease}
+  .page{max-width:820px;margin:0 auto;padding:26px 20px 52px;display:flex;
+        flex-direction:column;gap:18px}
+
+  .topline{display:flex;align-items:flex-end;justify-content:space-between;
+           gap:16px;flex-wrap:wrap;padding:0 4px}
+  .clock{display:flex;align-items:baseline;gap:6px;color:var(--ink);
+         font-variant-numeric:tabular-nums}
+  .clock .hm{font-size:44px;font-weight:800;letter-spacing:-.02em;line-height:1}
+  .clock .sec{font-size:17px;font-weight:600;color:var(--accent)}
+  .stamp{text-align:right;font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0}
+  .stamp b{display:block;color:var(--ink);font-weight:600;font-size:13.5px}
+
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:16px;
+         padding:20px 22px;box-shadow:0 1px 2px rgba(0,0,0,.04);
+         transition:background-color .9s ease,border-color .9s ease}
+  .phead{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+  .phead h2{margin:0;font-size:12.5px;font-weight:800;color:var(--accent-deep);
+            letter-spacing:.14em;text-transform:uppercase}
+  .phead svg{flex:none;display:block}
+
+  /* ── 節慶橫條 ─────────────────────────── */
+  .fest{display:flex;align-items:center;gap:14px;background:var(--panel-alt);
+        border:1px solid var(--edge);border-radius:14px;padding:12px 18px;
+        transition:background-color .9s ease,border-color .9s ease}
+  .fest svg{flex:none;display:block}
+  .fest .ftext{min-width:0}
+  .fest b{display:block;color:var(--ink);font-size:15.5px;font-weight:700;letter-spacing:.02em}
+  .fest span{font-size:12.5px;color:var(--ink-soft)}
+  .fest[data-today="1"]{background:var(--panel);border-color:var(--accent)}
+  .fest[data-today="1"] b{font-size:17px}
+  .fest[hidden]{display:none}
+
+  /* ── 天氣面板 ─────────────────────────── */
+  .wx{position:relative;overflow:hidden;background:var(--g);border-color:var(--gedge);
+      transition:background .9s ease,border-color .9s ease}
+  .wx > *{position:relative;z-index:2}
+  .wx .phead h2{color:var(--wink)}
+  .wxbody{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .wxnow{display:flex;align-items:center;gap:16px;min-width:0}
+  .wxtemp{color:var(--wink);font-size:40px;font-weight:800;letter-spacing:-.02em;
+          line-height:1;font-variant-numeric:tabular-nums}
+  .wxtemp sup{font-size:19px;font-weight:600;vertical-align:top;top:.2em;position:relative}
+  .wxwhere{font-size:14px;color:var(--wsoft)}
+  .wxwhere b{display:block;color:var(--wink);font-size:16px;font-weight:700;letter-spacing:.02em}
+  .wxfacts{display:flex;gap:0 26px;flex-wrap:wrap;margin-left:auto}
+  .wxfacts div{min-width:0}
+  .wxfacts dt{font-size:10.5px;font-weight:700;color:var(--wlabel);letter-spacing:.1em;
+              text-transform:uppercase;margin:0 0 2px}
+  .wxfacts dd{margin:0;font-size:14px;color:var(--wink);font-weight:500}
+  .wxline{margin:16px 0 0;padding-top:13px;border-top:1px solid var(--wrule);
+          font-family:var(--serif);font-size:19px;color:var(--wink);line-height:1.55}
+  .loc{margin:14px 0 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+       font-size:12px;color:var(--wlabel)}
+  .loc select{font:inherit;font-size:13px;font-weight:700;color:var(--wink);
+              background:rgba(255,255,255,.5);border:1px solid var(--wrule);
+              border-radius:8px;padding:7px 10px;max-width:100%}
+  .loc select:focus-visible{outline:2px solid var(--wink);outline-offset:2px}
+  .loc button{font:inherit;font-weight:700;color:var(--wink);background:none;
+              border:0;border-bottom:1px solid var(--wink);padding:0;cursor:pointer;opacity:.8}
+  .loc button:hover{opacity:1}
+  .loc button:focus-visible{outline:2px solid var(--wink);outline-offset:3px}
+  .loc #locstate{flex:1 1 100%;line-height:1.5}
+
+  /* 動態特效層 */
+  .fx{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .9s;
+      background:radial-gradient(90% 80% at 84% -6%,
+        rgba(255,255,255,.7) 0%, rgba(255,255,255,0) 62%)}
+  :root:not([data-sky]) .fx,:root[data-sky="warm"] .fx{opacity:1;animation:heat 7s ease-in-out infinite}
+  :root[data-sky="rain"] .fx,:root[data-sky="storm"] .fx{opacity:1;
+      background-image:repeating-linear-gradient(112deg,
+        rgba(255,255,255,0) 0 9px, rgba(255,255,255,.20) 9px 10px, rgba(255,255,255,0) 10px 24px);
+      background-size:auto 130px;animation:rainfall 1.05s linear infinite}
+  :root[data-sky="storm"] .fx{background-image:repeating-linear-gradient(112deg,
+        rgba(255,255,255,0) 0 7px, rgba(255,255,255,.26) 7px 8px, rgba(255,255,255,0) 8px 18px);
+      animation-duration:.72s}
+  :root[data-sky="hot"] .fx{opacity:1;background:radial-gradient(120% 90% at 78% -10%,
+        rgba(255,236,190,.55) 0%, rgba(255,236,190,0) 60%);animation:heat 5.5s ease-in-out infinite}
+  :root[data-sky="cloudy"] .fx,:root[data-sky="cool"] .fx{opacity:1;
+      background:radial-gradient(80% 70% at 20% 110%, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 60%);
+      animation:drift 14s ease-in-out infinite}
+  @keyframes rainfall{to{background-position:-60px 130px}}
+  @keyframes heat{0%,100%{opacity:.55}50%{opacity:1}}
+  @keyframes drift{0%,100%{transform:translateX(0)}50%{transform:translateX(26px)}}
+  #wxicon .rays{transform-origin:24px 24px;animation:spin 26s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .calm{margin:0;font-size:15.5px;color:var(--ink);font-weight:500}
+  .items{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+  .items li{display:flex;flex-direction:column;gap:2px}
+  .items b{color:var(--ink);font-size:15px;font-weight:700;letter-spacing:.01em}
+  .items span{font-size:13.5px;color:var(--ink-soft)}
+  .agstate{margin:12px 0 0;font-size:11.5px;color:var(--ink-grey);letter-spacing:.02em}
+  .agstate[hidden]{display:none}
+  .aside{margin:10px 0 0;font-size:13px}
+
+  .wrap{overflow-x:auto;margin:0 -6px}
+  table{border-collapse:collapse;width:100%;min-width:460px;font-variant-numeric:tabular-nums}
+  th,td{text-align:right;padding:9px 6px;border-bottom:1px solid var(--hairline);font-size:14px}
+  th{font-size:10.5px;font-weight:700;color:var(--ink-grey);letter-spacing:.1em;
+     text-transform:uppercase;border-bottom:1px solid var(--edge)}
+  th:first-child,td:first-child{text-align:left}
+  tbody tr:last-child td{border-bottom:0}
+  td.name{color:var(--ink);font-weight:700}
+  td.up{color:var(--up);font-weight:600}
+  td.dn{color:var(--down);font-weight:600}
+  td.when{color:var(--ink-grey);font-size:12px;font-weight:500}
+  .note{margin:14px 0 0;font-size:13px;padding-top:13px;border-top:1px dashed var(--hairline)}
+
+  .verse{background:var(--panel-alt);border-color:var(--edge)}
+  blockquote{margin:0;padding:2px 0 0 20px;border-left:3px solid var(--sky)}
+  blockquote p{margin:0;font-family:var(--serif);font-size:20px;line-height:1.85;color:var(--ink)}
+  .gloss{margin:15px 0 0;font-size:14px}
+  .ref{margin:10px 0 0;font-size:12px;color:var(--ink-grey);letter-spacing:.02em}
+
+  @media (max-width:640px){
+    .page{padding:20px 14px 40px;gap:14px}
+    .panel{padding:17px 16px;border-radius:14px}
+    .clock .hm{font-size:36px}
+    .wxfacts{margin-left:0;gap:12px 22px}
+    .wxline{font-size:17px}
+    blockquote p{font-size:18px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .fx,#wxicon .rays{animation:none!important}
+    *{transition:none!important}
+  }
+</style>
+<script>document.documentElement.setAttribute('data-sky','warm');</script>
+
+<div class="page">
+
+  <div class="topline">
+    <div class="clock"><span class="hm" id="hm">--:--</span><span class="sec" id="sec">--</span></div>
+    <p class="stamp"><b id="today">2026 年 9 月 14 日 星期一</b><span id="updated">資料更新於 9/14 11:08 · 台股盤中</span></p>
+  </div>
+
+  <!-- 節慶：只在「當天就是節慶或連假」時顯示，不做倒數。
+       不是節慶的日子整個 div 加 hidden。
+       教會節期保留四個：受難日（cross）、復活節（lily）、五旬節（flame）、感恩節（wheat）。
+       data-art 可用的鍵（20 款）：firework（元旦、跨年）、lantern（春節、除夕、元宵、中元）、
+       heart（情人節、白色情人節、七夕）、dove（和平紀念日）、balloon（兒童節）、
+       willow（清明）、cross（受難日）、lily（復活節）、tool（勞動節）、carnation（母親節、父親節）、
+       flame（五旬節）、dragonboat（端午，圖樣是粽子）、moon（中秋）、book（教師節）、
+       flag（國慶日、光復節、行憲紀念日等國定假日）、flower（重陽）、pumpkin（萬聖節）、
+       wheat（感恩節）、tangyuan（冬至）、tree（聖誕節） -->
+  <div class="fest" id="fest" data-art="moon" data-today="1" hidden>
+    <svg id="festart" width="40" height="40" viewBox="0 0 48 48" aria-hidden="true"></svg>
+    <div class="ftext">
+      <b id="festname">中秋節</b>
+      <span id="festwhen">今天 · 國定假日</span>
+    </div>
+  </div>
+
+  <!-- 天氣 -->
+  <section class="panel wx" id="wxpanel">
+    <div class="fx" aria-hidden="true"></div>
+    <div class="phead">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="9.5" cy="9.5" r="4.2" fill="var(--sunf)"/>
+        <path d="M9 21h9a3.1 3.1 0 0 0 .2-6.2A4.4 4.4 0 0 0 9.6 15 3 3 0 0 0 9 21z"
+              fill="var(--cloudf)" stroke="var(--clouds)" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <h2>今日天氣</h2>
+    </div>
+    <div class="wxbody">
+      <div class="wxnow">
+        <svg id="wxicon" width="52" height="52" viewBox="0 0 48 48" aria-hidden="true"></svg>
+        <div>
+          <span class="wxtemp"><span id="wxhi">32</span><sup>°</sup></span>
+          <div class="wxwhere"><b id="wxcity">高雄市</b><span id="wxsub">最低 26°</span></div>
+        </div>
+      </div>
+      <dl class="wxfacts">
+        <div><dt>天況</dt><dd id="wxcond">晴時多雲</dd></div>
+        <div><dt>降雨機率</dt><dd id="wxrain">20%</dd></div>
+        <div><dt>預報時段</dt><dd id="wxspan">白天 06 時–18 時</dd></div>
+      </dl>
+    </div>
+    <p class="wxline" id="wxline">白天偏熱但不下雨，補水就好。</p>
+    <div class="loc">
+      <select id="locpick" aria-label="選擇地點"></select>
+      <span id="locstate">選一次就會記住，之後打開都用這個地點。</span>
+    </div>
+  </section>
+
+  <!-- 待辦 -->
+  <section class="panel">
+    <div class="phead">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="3" fill="var(--panel)" stroke="var(--accent)" stroke-width="1.6"/>
+        <path d="M3 10h18" stroke="var(--accent)" stroke-width="1.6"/>
+        <path d="M8 3v4M16 3v4" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M8.8 15.4l2.1 2.1 3.9-4.2" fill="none" stroke="var(--warm)" stroke-width="1.9"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2>需要你注意</h2>
+    </div>
+    <!-- 行程：頁面每次打開會直接向 Google 日曆重抓，覆蓋這裡的靜態內容 -->
+    <div id="agenda">
+      <p class="calm">今天沒有行程。</p>
+    </div>
+    <!-- 信件：由排程寫入，頁面不會即時重抓 -->
+    <div id="mail">
+      <p class="aside">收件匣沒有人在等你回信。</p>
+    </div>
+    <p class="agstate" id="agstate" hidden></p>
+  </section>
+
+  <!-- 自選股 -->
+  <section class="panel">
+    <div class="phead">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 20V4M3 20h18" stroke="var(--ink-grey)" stroke-width="1.4" stroke-linecap="round"/>
+        <rect x="6.6" y="10" width="3.2" height="6.4" rx="1" fill="var(--up)"/>
+        <path d="M8.2 7.6v2.4M8.2 16.4v2" stroke="var(--up)" stroke-width="1.3" stroke-linecap="round"/>
+        <rect x="12.4" y="12.4" width="3.2" height="4.8" rx="1" fill="var(--down)"/>
+        <path d="M14 10v2.4M14 17.2v1.6" stroke="var(--down)" stroke-width="1.3" stroke-linecap="round"/>
+        <path d="M17.6 12.6l3-3.6M20.6 9h-2.6M20.6 9v2.6" stroke="var(--up)" stroke-width="1.5"
+              stroke-linecap="round" fill="none"/>
+      </svg>
+      <h2>自選股</h2>
+    </div>
+    <div class="wrap">
+      <table>
+        <thead>
+          <tr><th>標的</th><th>價格</th><th>漲跌</th><th>幅度</th><th>資料時間</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">台積電 2330</td><td>2,390.00</td><td class="dn">−20.00</td><td class="dn">−0.83%</td><td class="when">9/14 10:44 盤中</td></tr>
+          <tr><td class="name">元大台灣50 0050</td><td>107.00</td><td class="dn">−0.70</td><td class="dn">−0.65%</td><td class="when">9/14 10:51 盤中</td></tr>
+          <tr><td class="name">聯發科 2454</td><td>4,630.00</td><td class="up">+45.00</td><td class="up">+0.98%</td><td class="when">9/14 10:44 盤中</td></tr>
+          <tr><td class="name">NVDA</td><td>218.29</td><td class="dn">−0.07</td><td class="dn">−0.03%</td><td class="when">9/11 收盤</td></tr>
+          <tr><td class="name">GOOGL</td><td>338.50</td><td class="up">+5.90</td><td class="up">+1.77%</td><td class="when">9/11 收盤</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">今天上午盤面分家：聯發科從上週五的重挫中反彈，漲 45 元到 4,630、漲近 1%；台積電續弱，退到 2,390、跌 0.83%；0050 小跌 0.65% 到 107.00。美股那兩列是上週五（9/11）收盤，此刻美股休市。盤中價取自 Google Finance，收盤後改用證交所官方每日成交資訊。漲跌顏色照台股慣例：紅漲綠跌。價格為公開行情資訊，非投資建議。</p>
+  </section>
+
+  <!-- 經文 -->
+  <section class="panel verse">
+    <div class="phead">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3.2v17.6M6.6 8.6h10.8" stroke="var(--accent)" stroke-width="1.9" stroke-linecap="round"/>
+        <circle cx="12" cy="8.6" r="2.9" fill="none" stroke="var(--warm)" stroke-width="1.4"/>
+      </svg>
+      <h2>今日經文</h2>
+    </div>
+    <!-- 經文由頁面自己按日期輪替（見底部 VERSES），節慶日由排程寫入 data-override -->
+    <blockquote>
+      <p id="vtext">所以，不要為明天憂慮，因為明天自有明天的憂慮；一天的難處一天當就夠了。</p>
+    </blockquote>
+    <p class="gloss" id="vgloss">耶穌講的是分配憂慮的方式：明天的難處要等到明天才有力氣扛，今天預先擔心它，只是把兩天的重量壓在一天的肩膀上。祂沒有說不用計畫，而是說不用替還沒到的日子先受一次苦。</p>
+    <p class="ref" id="vref">馬太福音 6:34 · 和合本 · 每天從四福音輪替一節</p>
+    <!-- 節慶專用經文：排程只在受難日、復活節、五旬節、感恩節、聖誕節填這三個屬性，平日留空 -->
+    <span id="voverride" hidden data-text="" data-gloss="" data-ref=""></span>
+  </section>
+
+</div>
+
+<script>
+/* ── 當下時間 ───────────────────────────── */
+(function () {
+  var hm = document.getElementById('hm'), sec = document.getElementById('sec');
+  var days = ['日','一','二','三','四','五','六'];
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function tick() {
+    var d = new Date();
+    hm.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    sec.textContent = pad(d.getSeconds());
+  }
+  tick(); setInterval(tick, 1000);
+  var t = new Date();
+  document.getElementById('today').textContent =
+    t.getFullYear() + ' 年 ' + (t.getMonth() + 1) + ' 月 ' + t.getDate() + ' 日 星期' + days[t.getDay()];
+})();
+
+/* ── 節慶圖樣 ───────────────────────────── */
+(function () {
+  var A = 'var(--accent)', W = 'var(--warm)', P = 'var(--panel)', I = 'var(--ink)';
+  var FEST_ART = {
+    /* 中秋：滿月與雲 */
+    moon:'<circle cx="26" cy="20" r="13" fill="' + W + '"/>'
+      + '<circle cx="21" cy="15" r="2.4" fill="' + P + '" opacity=".5"/>'
+      + '<circle cx="30" cy="24" r="3.2" fill="' + P + '" opacity=".42"/>'
+      + '<circle cx="24" cy="27" r="1.8" fill="' + P + '" opacity=".42"/>'
+      + '<path d="M6 36h24a4 4 0 0 0 .3-8A5.6 5.6 0 0 0 7 29.6 3.8 3.8 0 0 0 6 36z"'
+      + ' fill="' + P + '" stroke="' + A + '" stroke-width="2" stroke-linejoin="round"/>',
+    /* 端午：粽子 */
+    dragonboat:'<path d="M24 9l14 26H10z" fill="' + A + '"/>'
+      + '<path d="M24 9l-7 13h14z" fill="' + W + '" opacity=".9"/>'
+      + '<path d="M24 9v26M11.5 22h25" stroke="' + P + '" stroke-width="1.8" opacity=".55"/>'
+      + '<path d="M14 39c6-3 14-3 20 0" fill="none" stroke="' + A + '" stroke-width="2.2" stroke-linecap="round" opacity=".5"/>',
+    /* 萬聖節：南瓜 */
+    pumpkin:'<path d="M24 12c1-3 4-4 6-3-2 1-3 2-3 4" fill="none" stroke="' + A + '" stroke-width="2.2" stroke-linecap="round"/>'
+      + '<ellipse cx="24" cy="27" rx="15" ry="12" fill="' + W + '"/>'
+      + '<path d="M17 16c-3 5-3 17 0 22M31 16c3 5 3 17 0 22M24 15v24" fill="none" stroke="' + A + '" stroke-width="1.6" opacity=".55"/>'
+      + '<path d="M17.5 23l3.5 3-3.5 3zM30.5 23L27 26l3.5 3z" fill="' + I + '"/>'
+      + '<path d="M18 32c2 2.6 4 3.6 6 3.6s4-1 6-3.6" fill="none" stroke="' + I + '" stroke-width="2.2" stroke-linecap="round"/>',
+    /* 聖誕：聖誕樹 */
+    tree:'<path d="M24 6l6 9h-12zM24 14l8 11H16zM24 23l10 13H14z" fill="' + A + '"/>'
+      + '<rect x="21.5" y="36" width="5" height="5" rx="1" fill="' + I + '" opacity=".6"/>'
+      + '<circle cx="20" cy="21" r="1.7" fill="' + W + '"/><circle cx="28" cy="29" r="1.7" fill="' + W + '"/>'
+      + '<circle cx="21" cy="32" r="1.7" fill="' + W + '"/>'
+      + '<path d="M24 3.5l1.4 2.9 3.2.5-2.3 2.3.5 3.2-2.8-1.5-2.8 1.5.5-3.2L19.4 6.9l3.2-.5z" fill="' + W + '"/>',
+    /* 春節、元宵：燈籠 */
+    lantern:'<path d="M24 6v4M20 10h8" stroke="' + A + '" stroke-width="2" stroke-linecap="round"/>'
+      + '<ellipse cx="24" cy="24" rx="12" ry="14" fill="' + W + '"/>'
+      + '<path d="M18 12c-2.5 7-2.5 17 0 24M30 12c2.5 7 2.5 17 0 24" fill="none" stroke="' + A + '" stroke-width="1.6" opacity=".6"/>'
+      + '<rect x="16" y="9" width="16" height="3" rx="1.4" fill="' + A + '"/>'
+      + '<rect x="16" y="36" width="16" height="3" rx="1.4" fill="' + A + '"/>'
+      + '<path d="M24 39v5M21 42l3 3 3-3" stroke="' + A + '" stroke-width="1.8" stroke-linecap="round" fill="none"/>',
+    /* 冬至：湯圓 */
+    tangyuan:'<path d="M8 24h32c0 8-7 13-16 13S8 32 8 24z" fill="' + P + '" stroke="' + A + '" stroke-width="2.2" stroke-linejoin="round"/>'
+      + '<circle cx="17" cy="21" r="4.4" fill="' + W + '"/><circle cx="26" cy="19" r="4.4" fill="' + W + '"/>'
+      + '<circle cx="34" cy="22" r="4" fill="' + W + '"/>'
+      + '<path d="M6 39h36" stroke="' + A + '" stroke-width="2" stroke-linecap="round" opacity=".45"/>',
+    /* 重陽：菊花 */
+    flower:'<circle cx="24" cy="22" r="4.2" fill="' + W + '"/>'
+      + '<g stroke="' + A + '" stroke-width="2.2" stroke-linecap="round">'
+      + '<path d="M24 10v6"/><path d="M24 28v6"/><path d="M12 22h6"/><path d="M30 22h6"/>'
+      + '<path d="M15.5 13.5l4.2 4.2"/><path d="M28.3 26.3l4.2 4.2"/>'
+      + '<path d="M32.5 13.5l-4.2 4.2"/><path d="M19.7 26.3l-4.2 4.2"/></g>'
+      + '<path d="M24 34v8M24 38c3 0 5-2 5-4" fill="none" stroke="' + A + '" stroke-width="2" stroke-linecap="round" opacity=".7"/>',
+    /* 國定假日通用：旗 */
+    flag:'<path d="M13 6v36" stroke="' + I + '" stroke-width="2.6" stroke-linecap="round"/>'
+      + '<path d="M13 9h22c-3 4-3 8 0 12H13z" fill="' + A + '"/>'
+      + '<circle cx="22" cy="15" r="2.6" fill="' + W + '"/>',
+    /* 情人節、七夕、白色情人節：心 */
+    heart:'<path d="M24 40C13 32 7 26 7 19.5A8.5 8.5 0 0 1 24 15a8.5 8.5 0 0 1 17 4.5C41 26 35 32 24 40z" fill="' + A + '"/>'
+      + '<path d="M15 19c0-2.4 1.8-4.2 4-4.4" fill="none" stroke="' + W + '" stroke-width="2.4" stroke-linecap="round"/>',
+    /* 教師節：書與筆 */
+    book:'<path d="M8 12h14a4 4 0 0 1 4 4v22a3.4 3.4 0 0 0-3.4-3.4H8z" fill="' + A + '"/>'
+      + '<path d="M40 12H26a4 4 0 0 0-4 4v22a3.4 3.4 0 0 1 3.4-3.4H40z" fill="' + P + '" stroke="' + A + '" stroke-width="2" stroke-linejoin="round"/>'
+      + '<path d="M29 20h8M29 25h8M29 30h6" stroke="' + A + '" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>'
+      + '<path d="M33 6l4 4-9 9-4.6 1.6L25 16z" fill="' + W + '"/>',
+    /* 兒童節：氣球 */
+    balloon:'<ellipse cx="19" cy="18" rx="9" ry="10.5" fill="' + A + '"/>'
+      + '<path d="M19 28.5l-2 3h4z" fill="' + A + '"/>'
+      + '<path d="M19 31.5c0 5-6 5-6 10" fill="none" stroke="' + I + '" stroke-width="1.6" stroke-linecap="round" opacity=".5"/>'
+      + '<ellipse cx="32" cy="24" rx="7" ry="8.5" fill="' + W + '"/>'
+      + '<path d="M32 32.5l-1.6 2.4h3.2z" fill="' + W + '"/>'
+      + '<path d="M32 35c0 4 4 4.5 4 7" fill="none" stroke="' + I + '" stroke-width="1.6" stroke-linecap="round" opacity=".5"/>'
+      + '<ellipse cx="16" cy="14" rx="2.6" ry="3.4" fill="' + P + '" opacity=".55"/>',
+    /* 元旦、跨年：煙火 */
+    firework:'<circle cx="24" cy="23" r="3" fill="' + W + '"/>'
+      + '<g stroke="' + A + '" stroke-width="2.2" stroke-linecap="round">'
+      + '<path d="M24 6v8"/><path d="M24 32v8"/><path d="M6 23h8"/><path d="M34 23h8"/>'
+      + '<path d="M11 10l5.5 5.5"/><path d="M31.5 30.5L37 36"/>'
+      + '<path d="M37 10l-5.5 5.5"/><path d="M16.5 30.5L11 36"/></g>'
+      + '<g fill="' + W + '"><circle cx="24" cy="4" r="1.8"/><circle cx="44" cy="23" r="1.8"/>'
+      + '<circle cx="24" cy="42" r="1.8"/><circle cx="4" cy="23" r="1.8"/></g>',
+    /* 和平紀念日：和平鴿 */
+    dove:'<ellipse cx="21" cy="26" rx="12" ry="7.5" fill="' + P + '" stroke="' + A + '" stroke-width="2"/>'
+      + '<circle cx="33" cy="19" r="5" fill="' + P + '" stroke="' + A + '" stroke-width="2"/>'
+      + '<path d="M37.5 17.5L44 16l-5.5 4z" fill="' + W + '"/>'
+      + '<circle cx="34" cy="18" r="1.3" fill="' + I + '"/>'
+      + '<path d="M14 21l8 3-9 5z" fill="' + W + '"/>'
+      + '<path d="M9 30L4 36M12 33l-3 7" stroke="' + A + '" stroke-width="2" stroke-linecap="round" opacity=".5"/>',
+    /* 勞動節：工具 */
+    tool:'<path d="M10 34l16-16" stroke="' + A + '" stroke-width="4" stroke-linecap="round"/>'
+      + '<path d="M24 14a7 7 0 1 0 10 10l6 6-4 4-6-6a7 7 0 0 1-10-10z" fill="' + A + '"/>'
+      + '<path d="M14 30l-6 6 4 4 6-6z" fill="' + W + '"/>',
+    /* 母親節、父親節：康乃馨 */
+    carnation:'<path d="M24 26v16" stroke="' + A + '" stroke-width="2.6" stroke-linecap="round"/>'
+      + '<path d="M24 34c5 0 8-2.5 8-6-5 0-8 2.5-8 6z" fill="' + A + '" opacity=".55"/>'
+      + '<path d="M24 39c-5 0-8-2.5-8-6 5 0 8 2.5 8 6z" fill="' + A + '" opacity=".55"/>'
+      + '<circle cx="17.5" cy="19" r="6" fill="' + A + '"/><circle cx="30.5" cy="19" r="6" fill="' + A + '"/>'
+      + '<circle cx="24" cy="13" r="6" fill="' + A + '"/><circle cx="24" cy="22" r="6.5" fill="' + W + '"/>',
+    /* 受難日：十字架 */
+    cross:'<path d="M24 5v38" stroke="' + A + '" stroke-width="4.5" stroke-linecap="round"/>'
+      + '<path d="M11 18h26" stroke="' + A + '" stroke-width="4.5" stroke-linecap="round"/>'
+      + '<circle cx="24" cy="18" r="7.5" fill="none" stroke="' + W + '" stroke-width="2"/>',
+    /* 感恩節：麥穗 */
+    wheat:'<path d="M24 43V16" stroke="' + A + '" stroke-width="2.6" stroke-linecap="round"/>'
+      + '<g fill="' + W + '">'
+      + '<ellipse cx="24" cy="10" rx="3" ry="5"/>'
+      + '<ellipse cx="18" cy="17" rx="2.8" ry="4.6" transform="rotate(-28 18 17)"/>'
+      + '<ellipse cx="30" cy="17" rx="2.8" ry="4.6" transform="rotate(28 30 17)"/>'
+      + '<ellipse cx="18" cy="25" rx="2.8" ry="4.6" transform="rotate(-28 18 25)"/>'
+      + '<ellipse cx="30" cy="25" rx="2.8" ry="4.6" transform="rotate(28 30 25)"/></g>'
+      + '<path d="M24 33c-4 0-7-2-8-5 4-1 7 1 8 5zM24 33c4 0 7-2 8-5-4-1-7 1-8 5z" fill="' + A + '" opacity=".55"/>',
+    /* 復活節：百合花與空墳的光 */
+    lily:'<circle cx="24" cy="20" r="14" fill="' + W + '" opacity=".28"/>'
+      + '<path d="M24 26L10 10c7-3 13 0 14 8 1-8 7-11 14-8z" fill="' + A + '"/>'
+      + '<path d="M24 26c-6-1-9-6-8-12 5 1 8 6 8 12zM24 26c6-1 9-6 8-12-5 1-8 6-8 12z" fill="' + A + '" opacity=".75"/>'
+      + '<path d="M24 26v17" stroke="' + A + '" stroke-width="2.8" stroke-linecap="round"/>'
+      + '<path d="M24 35c5 0 8-2 8-6-5 0-8 2-8 6z" fill="' + A + '" opacity=".5"/>'
+      + '<circle cx="24" cy="24" r="2.4" fill="' + W + '"/>',
+    /* 五旬節：火焰 */
+    flame:'<path d="M24 5c7 8 12 13 12 21a12 12 0 0 1-24 0c0-8 5-13 12-21z" fill="' + A + '"/>'
+      + '<path d="M24 20c3.5 4 6 7 6 11a6 6 0 0 1-12 0c0-4 2.5-7 6-11z" fill="' + W + '"/>'
+      + '<path d="M14 42h20" stroke="' + A + '" stroke-width="2.2" stroke-linecap="round" opacity=".45"/>',
+    /* 清明：柳枝 */
+    willow:'<path d="M10 8c10 3 18 12 22 26" fill="none" stroke="' + A + '" stroke-width="2.4" stroke-linecap="round"/>'
+      + '<g fill="' + W + '">'
+      + '<ellipse cx="18" cy="14" rx="4" ry="2" transform="rotate(30 18 14)"/>'
+      + '<ellipse cx="24" cy="20" rx="4" ry="2" transform="rotate(30 24 20)"/>'
+      + '<ellipse cx="29" cy="27" rx="4" ry="2" transform="rotate(30 29 27)"/>'
+      + '<ellipse cx="13" cy="19" rx="3.4" ry="1.8" transform="rotate(-20 13 19)"/>'
+      + '<ellipse cx="19" cy="27" rx="3.4" ry="1.8" transform="rotate(-20 19 27)"/></g>'
+  };
+
+  var box = document.getElementById('fest');
+  if (!box) return;
+  var key = box.getAttribute('data-art');
+  var art = FEST_ART[key];
+  if (!art) { box.hidden = true; return; }
+  document.getElementById('festart').innerHTML = art;
+})();
+
+/* ── 定位 → 縣市預報（高雄細到區），整頁配色隨天氣變 ── */
+(function () {
+  /* 氣象署 F-C0032-001 縣市預報，時段 2026-09-14 06:00 – 18:00 */
+  var SPAN = '白天 06 時–18 時';
+  var COUNTIES = [
+    { n:'臺北市', lat:25.04, lon:121.56, wx:'多雲短暫陣雨', pop:30, lo:25, hi:30 },
+    { n:'新北市', lat:25.01, lon:121.46, wx:'晴時多雲', pop:20, lo:25, hi:31 },
+    { n:'基隆市', lat:25.13, lon:121.74, wx:'多雲短暫陣雨', pop:30, lo:25, hi:28 },
+    { n:'桃園市', lat:24.99, lon:121.30, wx:'晴時多雲', pop:20, lo:25, hi:31 },
+    { n:'新竹市', lat:24.80, lon:120.97, wx:'晴時多雲', pop:20, lo:25, hi:31 },
+    { n:'新竹縣', lat:24.70, lon:121.12, wx:'晴時多雲', pop:20, lo:25, hi:31 },
+    { n:'苗栗縣', lat:24.49, lon:120.90, wx:'晴時多雲', pop:20, lo:24, hi:31 },
+    { n:'臺中市', lat:24.15, lon:120.68, wx:'晴時多雲', pop:20, lo:25, hi:34 },
+    { n:'彰化縣', lat:24.05, lon:120.52, wx:'晴時多雲', pop:20, lo:25, hi:32 },
+    { n:'南投縣', lat:23.90, lon:120.87, wx:'晴時多雲', pop:20, lo:24, hi:33 },
+    { n:'雲林縣', lat:23.71, lon:120.43, wx:'晴時多雲', pop:20, lo:24, hi:32 },
+    { n:'嘉義市', lat:23.48, lon:120.44, wx:'晴時多雲', pop:20, lo:24, hi:34 },
+    { n:'嘉義縣', lat:23.45, lon:120.30, wx:'晴時多雲', pop:20, lo:25, hi:32 },
+    { n:'臺南市', lat:23.00, lon:120.20, wx:'多雲短暫陣雨', pop:30, lo:26, hi:30 },
+    { n:'高雄市', lat:22.63, lon:120.30, wx:'晴時多雲', pop:20, lo:26, hi:32 },
+    { n:'屏東縣', lat:22.55, lon:120.55, wx:'多雲時晴', pop:20, lo:25, hi:33 },
+    { n:'宜蘭縣', lat:24.70, lon:121.74, wx:'晴時多雲', pop:20, lo:24, hi:30 },
+    { n:'花蓮縣', lat:23.75, lon:121.44, wx:'晴時多雲', pop:20, lo:25, hi:30 },
+    { n:'臺東縣', lat:22.79, lon:121.11, wx:'晴時多雲', pop:20, lo:24, hi:31 },
+    { n:'澎湖縣', lat:23.57, lon:119.58, wx:'多雲', pop:20, lo:26, hi:28 },
+    { n:'金門縣', lat:24.43, lon:118.32, wx:'晴時多雲', pop:20, lo:26, hi:32 },
+    { n:'連江縣', lat:26.15, lon:119.95, wx:'多雲短暫陣雨', pop:30, lo:26, hi:28 }
+  ];
+
+  /* 高雄市 38 區，座標取自氣象署鄉鎮預報資料 */
+  var KH = [
+    ['鹽埕區',22.626497,120.278707],['鼓山區',22.638584,120.273016],['左營區',22.691595,120.287036],
+    ['楠梓區',22.730250,120.318266],['三民區',22.649368,120.291742],['新興區',22.632760,120.301947],
+    ['前金區',22.629184,120.286147],['苓雅區',22.623511,120.304085],['前鎮區',22.588331,120.310239],
+    ['旗津區',22.612669,120.259857],['小港區',22.567159,120.330139],['鳳山區',22.628950,120.354328],
+    ['林園區',22.509736,120.386710],['大寮區',22.607134,120.387431],['大樹區',22.695141,120.425003],
+    ['大社區',22.731832,120.338556],['仁武區',22.703054,120.339578],['鳥松區',22.661582,120.356275],
+    ['岡山區',22.799100,120.286929],['橋頭區',22.759320,120.297688],['燕巢區',22.795113,120.354005],
+    ['田寮區',22.871588,120.351334],['阿蓮區',22.884885,120.319234],['路竹區',22.856394,120.251176],
+    ['湖內區',22.910132,120.203646],['茄萣區',22.908516,120.174426],['永安區',22.820017,120.216195],
+    ['彌陀區',22.783209,120.242564],['梓官區',22.762455,120.259214],['旗山區',22.890391,120.475404],
+    ['美濃區',22.896518,120.533776],['六龜區',23.000179,120.624638],['甲仙區',23.085825,120.579812],
+    ['杉林區',22.973535,120.531927],['內門區',22.944590,120.454551],['茂林區',22.888083,120.655623],
+    ['桃源區',23.161023,120.756064],['那瑪夏區',23.240035,120.688700]
+  ];
+
+  var RAYS = '<g class="rays" stroke="var(--sunf)" stroke-width="2.4" stroke-linecap="round">'
+    + '<path d="M24 3v5.5"/><path d="M24 39.5V45"/><path d="M3 24h5.5"/><path d="M39.5 24H45"/>'
+    + '<path d="M9.2 9.2l3.9 3.9"/><path d="M34.9 34.9l3.9 3.9"/>'
+    + '<path d="M38.8 9.2l-3.9 3.9"/><path d="M13.1 34.9l-3.9 3.9"/></g>';
+
+  var ICONS = {
+    sun: RAYS + '<circle cx="24" cy="24" r="9.5" fill="var(--sunf)"/>',
+    cloud:'<circle cx="16" cy="15" r="7" fill="var(--sunf)"/>'
+      + '<path d="M13 34h20a5.5 5.5 0 0 0 .4-11A7.8 7.8 0 0 0 14 23.4 5.3 5.3 0 0 0 13 34z"'
+      + ' fill="var(--cloudf)" stroke="var(--clouds)" stroke-width="2" stroke-linejoin="round"/>',
+    overcast:'<path d="M9 26h15a4.6 4.6 0 0 0 .3-9.2A6.6 6.6 0 0 0 10 17.4 4.4 4.4 0 0 0 9 26z"'
+      + ' fill="var(--cloudf)" stroke="var(--clouds)" stroke-width="1.8" stroke-linejoin="round" opacity=".72"/>'
+      + '<path d="M15 36h20a5.5 5.5 0 0 0 .4-11A7.8 7.8 0 0 0 16 25.4 5.3 5.3 0 0 0 15 36z"'
+      + ' fill="var(--cloudf)" stroke="var(--clouds)" stroke-width="2" stroke-linejoin="round"/>',
+    rain:'<path d="M12 30h20a5.5 5.5 0 0 0 .4-11A7.8 7.8 0 0 0 13 19.4 5.3 5.3 0 0 0 12 30z"'
+      + ' fill="var(--cloudf)" stroke="var(--clouds)" stroke-width="2" stroke-linejoin="round"/>'
+      + '<g stroke="var(--clouds)" stroke-width="2.2" stroke-linecap="round">'
+      + '<path d="M16 34l-1.6 6"/><path d="M24 34l-1.6 6"/><path d="M32 34l-1.6 6"/></g>',
+    storm:'<path d="M12 28h20a5.5 5.5 0 0 0 .4-11A7.8 7.8 0 0 0 13 17.4 5.3 5.3 0 0 0 12 28z"'
+      + ' fill="var(--cloudf)" stroke="var(--clouds)" stroke-width="2" stroke-linejoin="round"/>'
+      + '<path d="M24.5 30l-5 8h4.5l-2 7 8-10h-5l2.5-5z" fill="var(--sunf)"/>'
+      + '<g stroke="var(--cloudf)" stroke-width="2.2" stroke-linecap="round" opacity=".85">'
+      + '<path d="M15 32l-1.6 6"/><path d="M34 32l-1.6 6"/></g>'
+  };
+
+  function skyOf(c) {
+    var wx = c.wx || '';
+    if (c.pop >= 70 || /豪雨|大雨|雷/.test(wx)) return ['storm', 'storm'];
+    if (c.pop >= 30 || /雨/.test(wx))           return ['rain', 'rain'];
+    if (/陰/.test(wx))                          return ['cloudy', 'overcast'];
+    if (c.hi >= 33)                             return ['hot', 'sun'];
+    if (c.hi <= 20)                             return ['cool', /雲/.test(wx) ? 'cloud' : 'sun'];
+    if (/多雲/.test(wx) && c.hi < 26)           return ['cool', 'cloud'];
+    return ['warm', /雲/.test(wx) ? 'cloud' : 'sun'];
+  }
+
+  function adviceFor(c) {
+    if (c.pop >= 70) return '這種機率不用賭，傘直接帶著。';
+    if (c.pop >= 30) return '有一段時間會下，包裡塞把折傘比較省事。';
+    if (c.hi >= 33) return '熱是今天的主角，水帶足、中午盡量別曬。';
+    if (c.lo <= 16) return '早晚偏涼，出門那件外套會用得上。';
+    if (c.hi >= 30) return '白天偏熱但不下雨，補水就好。';
+    return '天氣穩定，沒什麼需要特別準備的。';
+  }
+
+  function dist(aLat, aLon, bLat, bLon) {
+    var dLat = (aLat - bLat) * 111;
+    var dLon = (aLon - bLon) * 111 * Math.cos(aLat * Math.PI / 180);
+    return Math.sqrt(dLat * dLat + dLon * dLon);
+  }
+
+  var state = document.getElementById('locstate');
+  var pick = document.getElementById('locpick');
+
+  function render(county, label, how) {
+    var sky = skyOf(county);
+    document.documentElement.setAttribute('data-sky', sky[0]);
+    document.getElementById('wxicon').innerHTML = ICONS[sky[1]];
+    document.getElementById('wxcity').textContent = label;
+    document.getElementById('wxhi').textContent = county.hi;
+    document.getElementById('wxsub').textContent = '最低 ' + county.lo + '°';
+    document.getElementById('wxcond').textContent = county.wx;
+    document.getElementById('wxrain').textContent = county.pop + '%';
+    document.getElementById('wxspan').textContent = SPAN;
+    document.getElementById('wxline').textContent = adviceFor(county);
+    state.textContent = how;
+  }
+
+  function countyByName(n) {
+    for (var i = 0; i < COUNTIES.length; i++) if (COUNTIES[i].n === n) return COUNTIES[i];
+    return COUNTIES[14];
+  }
+
+  /* ── 地點選單：高雄 38 區 ＋ 其他 21 縣市 ── */
+  (function buildPicker() {
+    var g1 = document.createElement('optgroup');
+    g1.label = '高雄市';
+    var o0 = document.createElement('option');
+    o0.value = 'C|高雄市';
+    o0.textContent = '高雄市（全市）';
+    g1.appendChild(o0);
+    for (var i = 0; i < KH.length; i++) {
+      var o = document.createElement('option');
+      o.value = 'K|' + KH[i][0];
+      o.textContent = '高雄市 ' + KH[i][0];
+      g1.appendChild(o);
+    }
+    var g2 = document.createElement('optgroup');
+    g2.label = '其他縣市';
+    for (var j = 0; j < COUNTIES.length; j++) {
+      if (COUNTIES[j].n === '高雄市') continue;
+      var o2 = document.createElement('option');
+      o2.value = 'C|' + COUNTIES[j].n;
+      o2.textContent = COUNTIES[j].n;
+      g2.appendChild(o2);
+    }
+    pick.appendChild(g1);
+    pick.appendChild(g2);
+  })();
+
+  function save(v) {
+    try { localStorage.setItem('brief.place', v); } catch (e) { /* 存不了就算了 */ }
+  }
+  function load() {
+    try { return localStorage.getItem('brief.place'); } catch (e) { return null; }
+  }
+
+  function apply(v, how) {
+    var parts = String(v).split('|');
+    if (parts[0] === 'K') {
+      render(countyByName('高雄市'), '高雄市 ' + parts[1],
+             how || ('顯示高雄市 ' + parts[1] + '。數字為氣象署高雄市預報。'));
+    } else {
+      var c = countyByName(parts[1]);
+      render(c, c.n, how || ('顯示' + c.n + '。氣象署預報只到縣市級，沒有細到區。'));
+    }
+    pick.value = v;
+  }
+
+  pick.addEventListener('change', function () {
+    save(pick.value);
+    apply(pick.value, null);
+  });
+
+
+  var saved = load();
+  if (saved && /^[KC]\|/.test(saved)) {
+    apply(saved, null);
+  } else {
+    apply('C|高雄市', '選一次就會記住，之後打開都用這個地點。');
+  }
+})();
+
+/* ── 行程：直接向 Google 日曆重抓（每次打開頁面都會問一次） ── */
+(function () {
+  var agenda = document.getElementById('agenda');
+  var state = document.getElementById('agstate');
+  if (!agenda || !state || typeof claude === 'undefined' || !claude.use) return;
+
+  function esc(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()
+      && a.getDate() === b.getDate();
+  }
+  function dayWord(d, now) {
+    var t = new Date(now.getTime() + 86400000);
+    if (sameDay(d, now)) return '今天';
+    if (sameDay(d, t)) return '明天';
+    return (d.getMonth() + 1) + '/' + d.getDate();
+  }
+  function isoLocal(d) { return d.toISOString(); }
+
+  function draw(events, note) {
+    if (!events.length) {
+      agenda.innerHTML = '<p class="calm">' + esc(note || '接下來沒有行程。') + '</p>';
+      return;
+    }
+    var html = '<ul class="items">';
+    for (var i = 0; i < events.length && i < 8; i++) {
+      var e = events[i];
+      html += '<li><b>' + esc(e.title) + '</b><span>' + esc(e.when)
+            + (e.where ? ' · ' + esc(e.where) : '') + '</span></li>';
+    }
+    agenda.innerHTML = html + '</ul>';
+  }
+
+  function parse(payload, now) {
+    var raw = (payload && payload.events) || [];
+    var out = [];
+    for (var i = 0; i < raw.length; i++) {
+      var ev = raw[i];
+      if (!ev || ev.status === 'cancelled') continue;
+      var s = ev.start || {}, en = ev.end || {};
+      var allDay = !s.dateTime && !!s.date;
+      var sd = new Date(s.dateTime || s.date);
+      var ed = new Date(en.dateTime || en.date || s.dateTime || s.date);
+      if (isNaN(sd.getTime())) continue;
+      if (ed.getTime() <= now.getTime()) continue;   /* 已經過去的不列 */
+      var when = allDay
+        ? dayWord(sd, now) + ' 整天'
+        : dayWord(sd, now) + ' ' + pad(sd.getHours()) + ':' + pad(sd.getMinutes())
+          + (isNaN(ed.getTime()) ? '' : '–' + pad(ed.getHours()) + ':' + pad(ed.getMinutes()));
+      out.push({ title: ev.summary || '（未命名行程）', when: when, where: ev.location || '', t: sd.getTime() });
+    }
+    out.sort(function (a, b) { return a.t - b.t; });
+    return out;
+  }
+
+  function stamp(result) {
+    var c = result && result.cache;
+    var at = c && c.storedAt ? new Date(c.storedAt) : new Date();
+    state.hidden = false;
+    state.textContent = '行程直接讀自 Google 日曆 · ' + pad(at.getHours()) + ':' + pad(at.getMinutes())
+      + (c && c.revalidating ? ' · 正在更新' : '');
+  }
+
+  claude.use('mcp').then(function (mcp) {
+    if (!mcp) return;  /* 沒有連接器能力：留著排程寫入的靜態內容 */
+
+    var now = new Date();
+    var from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    var to = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2, 0, 0, 0);
+
+    var input = {
+      startTime: isoLocal(from),
+      endTime: isoLocal(to),
+      timeZone: 'Asia/Taipei',
+      orderBy: 'startTime',
+      pageSize: 25
+    };
+
+    var retried = false;
+    var unsub = mcp.watchTool('Google Calendar', 'list_events', input, function (ev) {
+      if (ev.type === 'data') {
+        var now2 = new Date();
+        draw(parse(ev.result && ev.result.payload, now2));
+        stamp(ev.result);
+        return;
+      }
+      var code = ev.error && ev.error.code;
+      if (code === 'needs_reauth') {
+        state.hidden = false;
+        state.textContent = 'Google 日曆的授權過期了，到 claude.ai 設定 → 連接器重新連一次。以下是上次排程抓到的內容。';
+      } else if (code === 'server_not_connected' || code === 'selection_required') {
+        state.hidden = false;
+        state.textContent = '這個裝置讀不到 Google 日曆，以下是上次排程抓到的內容。';
+      } else if (code === 'blocked_by_policy' || code === 'approval_required') {
+        state.hidden = false;
+        state.textContent = '組織政策不允許這個頁面讀取日曆，以下是上次排程抓到的內容。';
+      } else if (code === 'not_granted' || code === 'capability_disabled'
+                 || code === 'capability_removed' || code === 'bad_request') {
+        state.hidden = true;   /* 不會有即時更新，安靜留著靜態內容 */
+      } else {
+        /* 暫時性錯誤：留著上一份好資料，最多重試一次 */
+        if (ev.error && ev.error.retryable && !retried) {
+          retried = true;
+          var wait = Math.min(ev.error.retryAfterMs || 3000, 60000) + Math.random() * 1000;
+          setTimeout(function () { mcp.invalidate('Google Calendar', 'list_events', input); }, wait);
+        }
+        state.hidden = false;
+        state.textContent = '暫時讀不到日曆，顯示的是最近一次成功抓到的內容。';
+      }
+    }, { cache: { staleTime: 0 }, refetchInterval: 300000 });
+
+    window.addEventListener('pagehide', function () { try { unsub(); } catch (e) {} });
+  }).catch(function () { /* 沒有能力就留著靜態內容 */ });
+})();
+
+/* ── 今日經文：頁面自己按日期輪替，不靠排程 ──────────────
+   VERSES 共 51 節，取自四福音（和合本，公有領域）。
+   每 51 天為一輪，用日期當種子把整副牌洗過再抽——所以每天跳到不同書卷，
+   不是照順序讀下去；同一天不論刷新幾次都一樣，跨過午夜才換，
+   一輪之內不重複，排程掛掉也照樣每天換。
+   節慶日（受難日、復活節、五旬節、感恩節、聖誕節）由排程
+   填 #voverride 的 data-text / data-gloss / data-ref，填了就蓋過輪替。 */
+(function () {
+  var V = [
+    ['虛心的人有福了！因為天國是他們的。',
+     '「虛心」原文是靈裡貧窮——知道自己一無所有的人。耶穌在山上對一群窮人、病人說這話，意思是天國的門對自認不夠格的人開得最大。',
+     '馬太福音 5:3'],
+    ['使人和睦的人有福了！因為他們必稱為神的兒子。',
+     '不是「不惹事的人」，而是主動走進兩造中間、去把裂痕接回來的人。耶穌說這種人身上最看得出天父的樣子。',
+     '馬太福音 5:9'],
+    ['你們是世上的光。城造在山上是不能隱藏的。',
+     '這句是說給一群沒沒無名的漁夫、稅吏聽的。重點不是要他們發光發熱，而是他們已經被放在看得見的位置上了。',
+     '馬太福音 5:14'],
+    ['你們的光也當這樣照在人前，叫他們看見你們的好行為，便將榮耀歸給你們在天上的父。',
+     '接續上一節。好行為被看見不是為了替自己累積名聲，而是讓人順著這道光看到光的來源。',
+     '馬太福音 5:16'],
+    ['因為你的財寶在哪裡，你的心也在那裡。',
+     '耶穌的順序跟我們想的相反：不是心在哪裡就把錢放哪裡，而是錢放到哪裡，心就慢慢跟過去。看帳單，比看決心誠實。',
+     '馬太福音 6:21'],
+    ['你們要先求他的國和他的義，這些東西都要加給你們了。',
+     '「這些東西」指的是前面講的吃甚麼、喝甚麼、穿甚麼。耶穌沒有說這些不重要，而是說把順序排對了，它們就不會變成你的主人。',
+     '馬太福音 6:33'],
+    ['所以，不要為明天憂慮，因為明天自有明天的憂慮；一天的難處一天當就夠了。',
+     '耶穌講的是分配憂慮的方式：明天的難處要等到明天才有力氣扛，今天預先擔心它，只是把兩天的重量壓在一天的肩膀上。祂沒有說不用計畫，而是說不用替還沒到的日子先受一次苦。',
+     '馬太福音 6:34'],
+    ['你們祈求，就給你們；尋找，就尋見；叩門，就給你們開門。',
+     '三個動詞一個比一個用力：求、找、敲。耶穌用這個遞進提醒人，禱告不是投一次幣就走開，而是持續地靠近。',
+     '馬太福音 7:7'],
+    ['所以，無論何事，你們願意人怎樣待你們，你們也要怎樣待人，因為這就是律法和先知的道理。',
+     '耶穌把整部舊約壓縮成一句可以當場操作的話。它的難處不在懂，在於得先誠實地想清楚自己希望被怎麼對待。',
+     '馬太福音 7:12'],
+    ['凡勞苦擔重擔的人可以到我這裡來，我就使你們得安息。',
+     '對象很明確：已經累了的人。耶穌沒有要人先振作起來再來，而是說就帶著那個重量過來。',
+     '馬太福音 11:28'],
+    ['我心裡柔和謙卑，你們當負我的軛，學我的樣式；這樣，你們心裡就必得享安息。',
+     '軛是兩頭牛共用的木架。耶穌沒說卸下所有擔子，是說換一副——由祂一起拉的那副。',
+     '馬太福音 11:29'],
+    ['人若賺得全世界，賠上自己的生命，有甚麼益處呢？',
+     '這是一句算術題，而且答案很冷。耶穌問的不是要不要努力，而是有沒有算過代價欄那邊寫著甚麼。',
+     '馬太福音 16:26'],
+    ['因為無論在哪裡，有兩三個人奉我的名聚會，那裡就有我在他們中間。',
+     '門檻低到只要兩三個人。這句原本的上下文是講彼此和解，所以「聚會」指的不只是人數，也是關係修好之後的同在。',
+     '馬太福音 18:20'],
+    ['你要盡心、盡性、盡意愛主—你的神。這是誡命中的第一，且是最大的。其次也相倣，就是要愛人如己。',
+     '有人想考倒耶穌，問哪一條最大。祂給了兩條，而且說第二條跟第一條「相倣」——愛神和愛人不是兩件事的排序，是同一件事的兩面。',
+     '馬太福音 22:37-39'],
+    ['我就常與你們同在，直到世界的末了。',
+     '馬太福音的最後一句。門徒正要被差派到陌生的地方去，耶穌給的不是成功保證，是陪伴的保證。',
+     '馬太福音 28:20'],
+
+    ['來跟從我，我要叫你們得人如得魚一樣。',
+     '耶穌在海邊對正在工作的漁夫說這話。祂沒有叫他們改行去做完全陌生的事，而是拿他們原本會的，換一個對象。',
+     '馬可福音 1:17'],
+    ['康健的人用不著醫生，有病的人才用得著。我來本不是召義人，乃是召罪人。',
+     '當時有人質疑耶穌為甚麼跟稅吏吃飯。祂的回答等於說：醫生本來就該待在病人多的地方。',
+     '馬可福音 2:17'],
+    ['耶穌醒了，斥責風，向海說：「住了吧！靜了吧！」風就止住，大大地平靜了。',
+     '船上的人以為要沉了，耶穌卻在睡覺。故事的重點不是風浪有多大，而是風浪裡祂是否真的在船上。',
+     '馬可福音 4:39'],
+    ['不要怕，只要信！',
+     '睚魯的女兒剛被報死訊，耶穌在他還沒來得及崩潰之前先說了這句。是很短的一句話，說在最壞的消息剛落地的那一秒。',
+     '馬可福音 5:36'],
+    ['你們來，同我暗暗地到曠野地方去歇一歇。',
+     '門徒剛出去服事回來，人多到連飯都沒空吃。耶穌給的下一個指令不是再加把勁，是去休息。',
+     '馬可福音 6:31'],
+    ['你若能信，在信的人，凡事都能。',
+     '一位父親說「你若能做甚麼」，耶穌把那個「若」還給了他。這不是保證想要甚麼就有甚麼，而是把門打開在信任這一邊。',
+     '馬可福音 9:23'],
+    ['我信！但我信不足，求主幫助。',
+     '這是那位父親的回答，聖經裡最誠實的禱告之一。他沒有假裝自己信心滿滿，而是把還不夠的那一半也交出去。',
+     '馬可福音 9:24'],
+    ['在人是不能，在神卻不然，因為神凡事都能。',
+     '門徒剛聽完駱駝穿針眼的比喻，嚇到問那誰能得救。耶穌的答案把主詞換掉了：不是人能不能，是神能不能。',
+     '馬可福音 10:27'],
+    ['因為人子來，並不是要受人的服事，乃是要服事人，並且要捨命作多人的贖價。',
+     '門徒正在爭誰坐大位。耶穌沒有罵他們有野心，是把「大」重新定義成願意蹲下去的那個人。',
+     '馬可福音 10:45'],
+    ['凡你們禱告祈求的，無論是甚麼，只要信是得著的，就必得著。',
+     '這句常被拿來當許願公式，但上下文緊接著就是「饒恕人的過犯」。信任和放下，在耶穌那裡是綁在一起的。',
+     '馬可福音 11:24'],
+    ['其次就是說：要愛人如己。再沒有比這兩條誡命更大的了。',
+     '「如己」是尺，不是修辭。耶穌等於說，你怎麼照顧自己的難處，就照那個標準去照顧旁邊的人。',
+     '馬可福音 12:31'],
+    ['不要驚恐！你們尋找那釘十字架的拿撒勒人耶穌，他已經復活了，不在這裡。',
+     '幾個女人天還沒亮就帶香膏去墳墓，準備做最後的告別。她們聽到的第一句話是叫她們別怕，第二句是他不在這裡。',
+     '馬可福音 16:6'],
+
+    ['因為，出於神的話，沒有一句不帶能力的。',
+     '天使對一個被告知要生孩子的年輕女子說的。這句不是抽象的教義，是對一個「這怎麼可能」的具體回答。',
+     '路加福音 1:37'],
+    ['不要懼怕！我報給你們大喜的信息，是關乎萬民的。',
+     '第一批收到耶穌出生消息的，是半夜還在野地看羊的工人。消息先到了最不起眼的人手上。',
+     '路加福音 2:10'],
+    ['你們願意人怎樣待你們，你們也要怎樣待人。',
+     '路加版本更短。放在「愛你們的仇敵」後面，所以它針對的不只是好相處的人。',
+     '路加福音 6:31'],
+    ['你們要慈悲，像你們的父慈悲一樣。',
+     '標準不是「比別人好一點」，而是照著已經先這樣對待你的那一位。這句同時讓人放心，也讓人沒有藉口。',
+     '路加福音 6:36'],
+    ['你們要給人，就必有給你們的；因為你們用甚麼量器量給人，也必用甚麼量器量給你們。',
+     '耶穌用的是市集裡量穀子的畫面。你手上那個杯子有多大，回來的時候就用同一個杯子量。',
+     '路加福音 6:38'],
+    ['馬大！馬大！你為許多的事思慮煩擾，但是不可少的只有一件；馬利亞已經選擇那上好的福分，是不能奪去的。',
+     '馬大在廚房忙到生氣，她做的事並沒有錯。耶穌指出的是她把「很多件重要的事」排在「唯一那件」前面了。',
+     '路加福音 10:41-42'],
+    ['我又告訴你們，你們祈求，就給你們；尋找，就尋見；叩門，就給你們開門。',
+     '前面剛講完半夜去敲朋友門借餅的故事。耶穌的意思是：神不是那個被吵醒會不耐煩的鄰居。',
+     '路加福音 11:9'],
+    ['就是你們的頭髮，也都被數過了。不要懼怕，你們比許多麻雀還貴重！',
+     '兩隻麻雀在當時只賣一個銅錢。耶穌用最便宜的東西當對照，說明被看顧這件事細到甚麼程度。',
+     '路加福音 12:7'],
+    ['你們要謹慎自守，免去一切的貪心，因為人的生命不在乎家道豐富。',
+     '有人請耶穌幫忙分家產，祂拒絕當那個仲裁者，反而回頭提醒雙方。重點從「該分多少」換成了「你以為那些東西是你的命嗎」。',
+     '路加福音 12:15'],
+    ['相離還遠，他父親看見，就動了慈心，跑去抱著他的頸項，連連與他親嘴。',
+     '浪子還在練習道歉的台詞，父親已經跑起來了。在當時的社會，年長的男人跑步是失體面的事——他不在乎。',
+     '路加福音 15:20'],
+    ['在人所不能的事，在神卻能。',
+     '同樣是回應「那誰能得救」。耶穌沒有把標準調低，而是指出救人的從來不是人自己的力氣。',
+     '路加福音 18:27'],
+    ['天地要廢去，我的話卻不能廢去。',
+     '耶穌在預告聖殿要倒塌的段落裡說這句。看起來最牢固的東西會過去，反而是話語留了下來。',
+     '路加福音 21:33'],
+
+    ['光照在黑暗裡，黑暗卻不接受光。',
+     '約翰福音的開場。這句沒有說光贏了或輸了，只說光一直在照——黑暗沒有把它吞掉。',
+     '約翰福音 1:5'],
+    ['神愛世人，甚至將他的獨生子賜給他們，叫一切信他的，不致滅亡，反得永生。',
+     '這句話是耶穌半夜對一個不敢公開來找他的宗教領袖說的。整本聖經的重量壓在一個「甚至」上。',
+     '約翰福音 3:16'],
+    ['人若喝我所賜的水就永遠不渴。我所賜的水要在他裡頭成為泉源，直湧到永生。',
+     '對象是一個中午才敢出來打水的撒瑪利亞婦人。耶穌從她每天都要做的那件苦差事講起。',
+     '約翰福音 4:14'],
+    ['我就是生命的糧。到我這裡來的，必定不餓；信我的，永遠不渴。',
+     '前一天祂剛餵飽五千人，群眾跟過來想再要一頓。耶穌把話題從餅轉到給餅的人身上。',
+     '約翰福音 6:35'],
+    ['我是世界的光。跟從我的，就不在黑暗裡走，必要得著生命的光。',
+     '祂說這話的時候正是住棚節，聖殿裡點滿了巨大的燈台。耶穌等於指著那些燈說：那個是影子，我是本體。',
+     '約翰福音 8:12'],
+    ['我來了，是要叫羊得生命，並且得的更豐盛。',
+     '前半句在講賊來是要偷竊殺害。耶穌用牧人和賊的對比，說明分辨的方法很簡單：看那個聲音是讓你活得更開闊還是更萎縮。',
+     '約翰福音 10:10'],
+    ['復活在我，生命也在我。信我的人雖然死了，也必復活。',
+     '這句話說在拉撒路的墳墓外面，對著剛失去弟弟的馬大。耶穌沒有先解釋為甚麼太遲了，先說的是「我是」。',
+     '約翰福音 11:25'],
+    ['我賜給你們一條新命令，乃是叫你們彼此相愛；我怎樣愛你們，你們也要怎樣相愛。',
+     '「彼此相愛」不新，新的是後半句的標準。祂剛剛才蹲下去洗完他們的腳，包括那個等一下要出賣祂的人。',
+     '約翰福音 13:34'],
+    ['我就是道路、真理、生命；若不藉著我，沒有人能到父那裡去。',
+     '多馬剛說「我們不知道往哪裡去，怎麼知道那條路」。耶穌的回答不是給地圖，是說路本身是一個人。',
+     '約翰福音 14:6'],
+    ['我留下平安給你們；我將我的平安賜給你們。我所賜的，不像世人所賜的。你們心裡不要憂愁，也不要膽怯。',
+     '這是耶穌被捕前一晚說的話，處境一點都不平安。祂特別強調這種平安跟世界給的不一樣——不是靠情況變好來的。',
+     '約翰福音 14:27'],
+    ['我是葡萄樹，你們是枝子。常在我裡面的，我也常在他裡面，這人就多結果子；因為離了我，你們就不能做甚麼。',
+     '枝子不必用力結果子，它只需要連著。耶穌講的重點是連結，不是產量。',
+     '約翰福音 15:5'],
+    ['在世上，你們有苦難；但你們可以放心，我已經勝了世界。',
+     '前半句先承認苦難是真的，沒有打折。安慰放在後半句，而且用的是完成式——已經勝了。',
+     '約翰福音 16:33']
+  ];
+
+  var t = document.getElementById('vtext'),
+      g = document.getElementById('vgloss'),
+      r = document.getElementById('vref'),
+      ov = document.getElementById('voverride');
+  if (!t || !g || !r) return;
+
+  /* 節慶專用經文優先 */
+  if (ov && ov.getAttribute('data-text')) {
+    t.textContent = ov.getAttribute('data-text');
+    g.textContent = ov.getAttribute('data-gloss') || '';
+    r.textContent = (ov.getAttribute('data-ref') || '') + ' · 和合本 · 今天是節期，選的是相關的一節';
+    return;
+  }
+
+  /* 亂序抽籤，但同一天固定：
+     以「1970 起算的天數」當種子。每 51 天算一輪，每輪用種子把 0..50 重新洗牌一次，
+     今天抽洗牌後的第 n 張。所以連續兩天會跳到完全不同的書卷，不是照順序讀下去；
+     一輪之內不重複，一輪結束換新種子重洗，順序也跟上一輪不一樣。 */
+  function rng(seed) {                       /* mulberry32，小而夠亂 */
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var x = Math.imul(a ^ (a >>> 15), 1 | a);
+      x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+      return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffleFor(cycle) {               /* 這一輪的抽籤順序 */
+    var rand = rng(Math.imul(cycle + 1, 2654435761) ^ 0x9E3779B9);
+    var a = [], i, j, tmp;
+    for (i = 0; i < V.length; i++) a.push(i);
+    for (i = a.length - 1; i > 0; i--) {
+      j = Math.floor(rand() * (i + 1));
+      tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+    }
+    return a;
+  }
+
+  var d = new Date();
+  var day = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+  var cycle = Math.floor(day / V.length);
+  var pos = day - cycle * V.length;
+  var order = shuffleFor(cycle);
+  /* 跨輪的接縫：新一輪第一張若跟上一輪最後一張撞號，往後挪一張 */
+  if (pos === 0 && order[0] === shuffleFor(cycle - 1)[V.length - 1]) order.push(order.shift());
+
+  var v = V[order[pos]];
+  t.textContent = v[0];
+  g.textContent = v[1];
+  r.textContent = v[2] + ' · 和合本 · 每天從四福音隨機抽一節（共 ' + V.length + ' 節，抽完才會再出現）';
+})();
+</script>
+</body>
+</html>
