@@ -4,21 +4,21 @@
 - **推播**：關閉
 - **需要的連接器**：無（只用 WebFetch 與 Artifact）
 
-這份指令只動自選股表格裡台股那三列，其他一律不碰。
+這份指令只寫資料庫裡 `stocks`、`stockNote`、`updated` 三個欄位，不碰 HTML、不發佈 artifact。
 
 使用前把 `<YOUR_ARTIFACT_URL>` 換成你自己的。
 
 ---
 
-只更新台股盤中價，其他區塊一律不要動。全部繁體中文。時區 Asia/Taipei。無人看顧，不要提問。
+只更新台股盤中價。全部繁體中文。時區 Asia/Taipei。無人看顧，不要提問。
 
-目標頁面：`<YOUR_ARTIFACT_URL>`
+**這個排程不碰 HTML，也不發佈 artifact。**頁面會自己去讀資料庫，你只要把新數字寫進那份文件就好。
 
-【第一步】用 Bash 執行 `TZ=Asia/Taipei date "+%Y-%m-%d %H:%M %A"`。容器預設是 UTC，會差八小時；所有時間寫入都用台灣時間。**若今天是週六或週日，或台灣時間不在 09:00–13:35 之間，就什麼都不要做，直接回覆「非交易時段，略過」。**
+目標 artifact：`<YOUR_ARTIFACT_URL>`
 
-【第二步】用 Artifact 工具 action:"read"、url 上面那個網址，取得目前 HTML。**除了自選股表格裡台股那三列的數字與資料時間、表格下方的 `class="note"`、以及 `id="updated"` 這幾處之外，整份檔案一個字都不要改**——CSS 六組色板、節慶橫條與 FEST_ART 圖樣、各面板 SVG、時鐘 script、天氣 script（COUNTIES、KH 高雄 38 區座標表、skyOf、adviceFor、render、buildPicker 等）、最後兩段 script（Google 日曆即時重抓、今日經文 VERSES 抽籤）、經文區塊與 `<span id="voverride">`，全部原樣保留。天氣與行程不歸這個排程管。
+【第一步】用 Bash 執行 `TZ=Asia/Taipei date "+%Y-%m-%d %H:%M %A"`。容器預設是 UTC，會差八小時。**若今天是週六或週日，或台灣時間不在 09:00–13:35 之間，就什麼都不要做，直接回覆「非交易時段，略過」。**
 
-【第三步：抓台股盤中價】用 Google Finance，一檔一個網址：
+【第二步：抓盤中價】用 Google Finance，一檔一個網址：
 
 - `https://www.google.com/finance/quote/2330:TPE?hl=zh-TW`
 - `https://www.google.com/finance/quote/0050:TPE?hl=zh-TW`
@@ -34,18 +34,23 @@ the previous close, and the timestamp line directly under the price.
 Quote the timestamp verbatim.
 ```
 
-**每一檔都要做這兩項合理性檢查**，任何一項不過就放棄那一檔、保留頁面上原本的數字與標籤：
+若回 HTTP 429（rate limited），等 60 秒再抓下一檔，不要放棄。
+
+**每一檔都要做這兩項合理性檢查**，任何一項不過就放棄那一檔、沿用資料庫裡原本那一列：
 
 - (a) 時間戳必須是今天、而且在 09:00–13:35 之間（例如「9月14日, 上午09:04:12 [GMT+8]」）。出現別的日期就是抓錯了。
-- (b) 價格與 previous close 的差距要合理（台股單日漲跌幅上限 10%），而且 previous close 要跟頁面表格上原本那檔的價格接近。
+- (b) 價格與 previous close 的差距在 10% 以內（台股單日漲跌幅上限），且 previous close 要跟資料庫裡原本那一列的價格接近。
 
-【第四步：改哪些地方】
+【第三步：讀目前的資料】用 Artifact 工具 action:"read_db"、db_op:"get"、url 上面那個、collection `brief`、doc_id `latest`。記下它的 `version` 與 `stocks` 陣列現在的內容（五列：台積電 2330、元大台灣50 0050、聯發科 2454、NVDA、GOOGL）。
 
-1. 台股三列（台積電 2330、元大台灣50 0050、聯發科 2454）的價格、漲跌、幅度換成新抓到的數字。上漲整列 `class="up"`、下跌 `class="dn"`（台股慣例紅漲綠跌）。資料時間欄寫「<月>/<日> <時>:<分> 盤中」。
-2. **NVDA 與 GOOGL 兩列完全不要動**（美股此刻休市）。表格順序維持台股在上、美股在下。
-3. 表格下方 `class="note"`：前兩三句用白話寫開盤後的盤面（哪檔漲哪檔跌、幅度），明講這是幾點幾分的盤中價。**不要寫任何會過期的句子**（例如「尚未開盤」）。結尾固定保留這幾句：盤中價取自 Google Finance，收盤後改用證交所官方每日成交資訊。漲跌顏色照台股慣例：紅漲綠跌。價格為公開行情資訊，非投資建議。
-4. `id="updated"` 改成「資料更新於 <月>/<日> <時>:<分> · 台股盤中」。
+【第四步：寫回去】用 Artifact 工具 action:"write_db"、db_op:"update"、collection `brief`、doc_id `latest`、if_version 帶上剛剛讀到的 version，data 只放這三個欄位：
 
-【第五步：發佈】用 Artifact 工具發佈，帶 url 參數指向上面那個網址。不要傳 favicon、**不要傳 capabilities**（省略會沿用已儲存的 Google Calendar 連接器授權，傳空的會把頁面即時讀取行程的功能關掉）、不要改標題。若發佈被拒（有人在你之後改過），先讀回最新版、只把你的股價更動合併進去再發佈一次。
+- `stocks`：完整的五列陣列（update 對陣列是整個取代，所以五列都要寫）。台股三列換成新數字，**NVDA 與 GOOGL 兩列原封不動照抄**。每一列的格式是
+  `{"name":"台積電 2330","price":"2,380.00","chg":"−30.00","pct":"−1.24%","when":"9/14 09:05 盤中","dir":"dn"}`
+  價格用千分位逗號；漲跌與幅度的負號用「−」（U+2212）不是減號；`dir` 上漲填 `up`、下跌填 `dn`、平盤填空字串。
+- `stockNote`：兩三句白話寫開盤後的盤面（哪檔漲哪檔跌、幅度），明講這是幾點幾分的盤中價。**不要寫任何會過期的句子**（例如「尚未開盤」）。結尾固定接這三句：盤中價取自 Google Finance，收盤後改用證交所官方每日成交資訊。漲跌顏色照台股慣例：紅漲綠跌。價格為公開行情資訊，非投資建議。
+- `updated`：`"<月>/<日> <時>:<分> · 台股盤中"`
+
+**不要動 counties、span、fest、mail、agenda、verse 這幾個欄位**，也不要用 db_op:"set"（那會把整份文件換掉）。
 
 回覆只要一句話：三檔開盤後的走勢。

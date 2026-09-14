@@ -216,7 +216,7 @@
 
   <div class="topline">
     <div class="clock"><span class="hm" id="hm">--:--</span><span class="sec" id="sec">--</span></div>
-    <p class="stamp"><b id="today">2026 年 9 月 14 日 星期一</b><span id="updated">資料更新於 9/14 11:08 · 台股盤中</span></p>
+    <p class="stamp"><b id="today">2026 年 9 月 14 日 星期一</b><span id="updated">9/14 13:40 · 台股收盤</span></p>
   </div>
 
   <!-- 節慶：只在「當天就是節慶或連假」時顯示，不做倒數。
@@ -310,16 +310,16 @@
         <thead>
           <tr><th>標的</th><th>價格</th><th>漲跌</th><th>幅度</th><th>資料時間</th></tr>
         </thead>
-        <tbody>
-          <tr><td class="name">台積電 2330</td><td>2,390.00</td><td class="dn">−20.00</td><td class="dn">−0.83%</td><td class="when">9/14 10:44 盤中</td></tr>
-          <tr><td class="name">元大台灣50 0050</td><td>107.00</td><td class="dn">−0.70</td><td class="dn">−0.65%</td><td class="when">9/14 10:51 盤中</td></tr>
-          <tr><td class="name">聯發科 2454</td><td>4,630.00</td><td class="up">+45.00</td><td class="up">+0.98%</td><td class="when">9/14 10:44 盤中</td></tr>
+        <tbody id="stockrows">
+          <tr><td class="name">台積電 2330</td><td>2,380.00</td><td class="dn">−30.00</td><td class="dn">−1.24%</td><td class="when">9/14 收盤 · 待官方確認</td></tr>
+          <tr><td class="name">元大台灣50 0050</td><td>106.80</td><td class="dn">−0.90</td><td class="dn">−0.84%</td><td class="when">9/14 收盤 · 待官方確認</td></tr>
+          <tr><td class="name">聯發科 2454</td><td>4,560.00</td><td class="dn">−25.00</td><td class="dn">−0.55%</td><td class="when">9/14 收盤 · 待官方確認</td></tr>
           <tr><td class="name">NVDA</td><td>218.29</td><td class="dn">−0.07</td><td class="dn">−0.03%</td><td class="when">9/11 收盤</td></tr>
           <tr><td class="name">GOOGL</td><td>338.50</td><td class="up">+5.90</td><td class="up">+1.77%</td><td class="when">9/11 收盤</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note">今天上午盤面分家：聯發科從上週五的重挫中反彈，漲 45 元到 4,630、漲近 1%；台積電續弱，退到 2,390、跌 0.83%；0050 小跌 0.65% 到 107.00。美股那兩列是上週五（9/11）收盤，此刻美股休市。盤中價取自 Google Finance，收盤後改用證交所官方每日成交資訊。漲跌顏色照台股慣例：紅漲綠跌。價格為公開行情資訊，非投資建議。</p>
+    <p class="note" id="stocknote">台股今天收黑作收，三檔全數下跌：台積電收 2,380 元、跌 1.24%，是三檔裡最重的；聯發科早盤一度反彈到 4,630，尾盤翻黑收 4,560、跌 0.55%；0050 收 106.80、跌 0.84%。美股那兩列是上週五（9/11）收盤。盤中價取自 Google Finance，收盤後改用證交所官方每日成交資訊。漲跌顏色照台股慣例：紅漲綠跌。價格為公開行情資訊，非投資建議。</p>
   </section>
 
   <!-- 經文 -->
@@ -488,10 +488,22 @@
 
   var box = document.getElementById('fest');
   if (!box) return;
-  var key = box.getAttribute('data-art');
-  var art = FEST_ART[key];
-  if (!art) { box.hidden = true; return; }
-  document.getElementById('festart').innerHTML = art;
+  function paint() {
+    var art = FEST_ART[box.getAttribute('data-art')];
+    if (art) document.getElementById('festart').innerHTML = art;
+    return !!art;
+  }
+  if (!paint()) box.hidden = true;
+
+  window.__brief = window.__brief || {};
+  window.__brief.setFest = function (f) {
+    if (!f || !f.name) { box.hidden = true; return; }
+    box.setAttribute('data-art', f.art || 'flag');
+    box.setAttribute('data-today', '1');
+    document.getElementById('festname').textContent = f.name;
+    document.getElementById('festwhen').textContent = f.when || '今天';
+    box.hidden = !paint();
+  };
 })();
 
 /* ── 定位 → 縣市預報（高雄細到區），整頁配色隨天氣變 ── */
@@ -671,6 +683,23 @@
   } else {
     apply('C|高雄市', '選一次就會記住，之後打開都用這個地點。');
   }
+
+  /* 資料層改完 COUNTIES 的數值後，用目前選的地點重畫 */
+  window.__brief = window.__brief || {};
+  window.__brief.setWeather = function (span, byCounty) {
+    if (span) SPAN = span;
+    if (byCounty) {
+      for (var i = 0; i < COUNTIES.length; i++) {
+        var d = byCounty[COUNTIES[i].n];
+        if (!d) continue;
+        if (d.wx != null) COUNTIES[i].wx = d.wx;
+        if (d.pop != null) COUNTIES[i].pop = d.pop;
+        if (d.lo != null) COUNTIES[i].lo = d.lo;
+        if (d.hi != null) COUNTIES[i].hi = d.hi;
+      }
+    }
+    apply(pick.value || 'C|高雄市', null);
+  };
 })();
 
 /* ── 行程：直接向 Google 日曆重抓（每次打開頁面都會問一次） ── */
@@ -698,6 +727,7 @@
   function isoLocal(d) { return d.toISOString(); }
 
   function draw(events, note) {
+    window.__briefAgendaLive = true;
     if (!events.length) {
       agenda.innerHTML = '<p class="calm">' + esc(note || '接下來沒有行程。') + '</p>';
       return;
@@ -1010,6 +1040,95 @@
   t.textContent = v[0];
   g.textContent = v[1];
   r.textContent = v[2] + ' · 和合本 · 每天從四福音隨機抽一節（共 ' + V.length + ' 節，抽完才會再出現）';
+})();
+
+/* ── 資料層：天氣、股票、信件、節慶由 artifact 的小型資料庫讀取 ──────────
+   排程不再重寫整份 HTML，只寫 brief/latest 這一份幾 KB 的 JSON 文件。
+   讀不到資料庫（例如這份檔案被放到 GitHub／Vercel 之類的靜態主機）時，
+   下面什麼都不做，頁面就顯示 HTML 裡原本烘焙好的那份快照。 */
+(function () {
+  function esc(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function set(id, text) {
+    var el = document.getElementById(id);
+    if (el && text != null) el.textContent = text;
+  }
+
+  function apply(d) {
+    if (!d) return;
+    var B = window.__brief || {};
+
+    if (d.updated) set('updated', '資料更新於 ' + d.updated);
+
+    if (B.setWeather && (d.counties || d.span)) B.setWeather(d.span, d.counties);
+    if (B.setFest && Object.prototype.hasOwnProperty.call(d, 'fest')) B.setFest(d.fest);
+
+    if (d.stocks && d.stocks.length) {
+      var rows = '';
+      for (var i = 0; i < d.stocks.length; i++) {
+        var s = d.stocks[i];
+        var c = s.dir === 'up' ? 'up' : (s.dir === 'dn' ? 'dn' : '');
+        rows += '<tr><td class="name">' + esc(s.name) + '</td>'
+             +  '<td>' + esc(s.price) + '</td>'
+             +  '<td class="' + c + '">' + esc(s.chg) + '</td>'
+             +  '<td class="' + c + '">' + esc(s.pct) + '</td>'
+             +  '<td class="when">' + esc(s.when) + '</td></tr>';
+      }
+      var tb = document.getElementById('stockrows');
+      if (tb) tb.innerHTML = rows;
+    }
+    if (d.stockNote) set('stocknote', d.stockNote);
+
+    if (d.mail) {
+      var m = document.getElementById('mail');
+      if (m) {
+        if (!d.mail.length) {
+          m.innerHTML = '<p class="aside">收件匣沒有人在等你回信。</p>';
+        } else {
+          var mh = '<ul class="items">';
+          for (var j = 0; j < d.mail.length; j++) {
+            mh += '<li><b>' + esc(d.mail[j].who) + '</b><span>' + esc(d.mail[j].what) + '</span></li>';
+          }
+          m.innerHTML = mh + '</ul>';
+        }
+      }
+    }
+
+    /* 行程：頁面若已經自己向 Google 日曆抓到即時資料，就不要用備援蓋掉 */
+    if (d.agenda && !window.__briefAgendaLive) {
+      var a = document.getElementById('agenda');
+      if (a) {
+        if (!d.agenda.length) {
+          a.innerHTML = '<p class="calm">接下來沒有行程。</p>';
+        } else {
+          var ah = '<ul class="items">';
+          for (var k = 0; k < d.agenda.length; k++) {
+            ah += '<li><b>' + esc(d.agenda[k].title) + '</b><span>' + esc(d.agenda[k].when) + '</span></li>';
+          }
+          a.innerHTML = ah + '</ul>';
+        }
+      }
+    }
+
+    /* 節期經文覆蓋；平常日這個欄位是空的，經文由頁面自己抽籤 */
+    if (d.verse && d.verse.text) {
+      set('vtext', d.verse.text);
+      set('vgloss', d.verse.gloss || '');
+      set('vref', (d.verse.ref || '') + ' · 和合本 · 今天是節期，選的是相關的一節');
+    }
+  }
+
+  if (typeof claude === 'undefined' || !claude.use) return;
+  claude.use('db').then(function (db) {
+    if (!db) return;
+    db.doc('brief/latest').onSnapshot(
+      function (snap) { if (snap.exists) apply(snap.data()); },
+      function () { /* 讀不到就留著 HTML 裡的快照 */ }
+    );
+  }).catch(function () { /* 同上 */ });
 })();
 </script>
 </body>
