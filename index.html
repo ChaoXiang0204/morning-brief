@@ -625,6 +625,16 @@
     return COUNTIES[14];
   }
 
+  /* 高雄 38 區各自的天氣。抓不到分區資料前，先沿用「高雄市」整體的數字頂著，
+     跟其他縣市一樣不留空白；data.json 的 khDistricts 抓到後逐區覆蓋。 */
+  var KHWX = {};
+  (function () {
+    var d = countyByName('高雄市');
+    for (var i = 0; i < KH.length; i++) {
+      KHWX[KH[i][0]] = { wx: d.wx, pop: d.pop, lo: d.lo, hi: d.hi };
+    }
+  })();
+
   function nearestCounty(lat, lon) {
     var best = COUNTIES[0], bestD = Infinity;
     for (var i = 0; i < COUNTIES.length; i++) {
@@ -680,8 +690,8 @@
   function apply(v, how) {
     var parts = String(v).split('|');
     if (parts[0] === 'K') {
-      render(countyByName('高雄市'), '高雄市 ' + parts[1],
-             how || ('顯示高雄市 ' + parts[1] + '。數字為氣象署高雄市預報。'));
+      var d = KHWX[parts[1]] || countyByName('高雄市');
+      render(d, '高雄市 ' + parts[1], how || ('顯示高雄市 ' + parts[1] + '。'));
     } else {
       var c = countyByName(parts[1]);
       render(c, c.n, how || ('顯示' + c.n + '。氣象署預報只到縣市級，沒有細到區。'));
@@ -733,7 +743,7 @@
 
   /* 資料層改完 COUNTIES 的數值後，用目前選的地點重畫 */
   window.__brief = window.__brief || {};
-  window.__brief.setWeather = function (span, byCounty) {
+  window.__brief.setWeather = function (span, byCounty, byKHDistrict) {
     if (span) SPAN = span;
     if (byCounty) {
       for (var i = 0; i < COUNTIES.length; i++) {
@@ -743,6 +753,17 @@
         if (d.pop != null) COUNTIES[i].pop = d.pop;
         if (d.lo != null) COUNTIES[i].lo = d.lo;
         if (d.hi != null) COUNTIES[i].hi = d.hi;
+      }
+    }
+    if (byKHDistrict) {
+      for (var j = 0; j < KH.length; j++) {
+        var name = KH[j][0], dd = byKHDistrict[name];
+        if (!dd) continue;
+        var cur = KHWX[name] || (KHWX[name] = {});
+        if (dd.wx != null) cur.wx = dd.wx;
+        if (dd.pop != null) cur.pop = dd.pop;
+        if (dd.lo != null) cur.lo = dd.lo;
+        if (dd.hi != null) cur.hi = dd.hi;
       }
     }
     apply(pick.value || 'C|高雄市', null);
@@ -991,7 +1012,7 @@
 
     if (d.updated) set('updated', '資料更新於 ' + d.updated);
 
-    if (B.setWeather && (d.counties || d.span)) B.setWeather(d.span, d.counties);
+    if (B.setWeather && (d.counties || d.span || d.khDistricts)) B.setWeather(d.span, d.counties, d.khDistricts);
     if (B.setFest && Object.prototype.hasOwnProperty.call(d, 'fest')) B.setFest(d.fest);
 
     if (d.stocks && d.stocks.length) {

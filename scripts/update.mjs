@@ -144,6 +144,71 @@ async function weather() {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   一之二、高雄市 38 區：中央氣象署 F-D0047-065（鄉鎮未來 3 天預報）
+   縣市預報只到「高雄市」一整筆，這支才有分區。抓 3 小時一格的資料，
+   取跟縣市預報同一個 12 小時時段（4 格），天氣現象取最嚴重的一格、
+   降雨機率取最大值、溫度取這段時間內的最低最高。
+   ────────────────────────────────────────────────────────────── */
+
+function wxRank(w) {
+  if (/豪雨|大雨|雷/.test(w)) return 4;
+  if (/雨/.test(w)) return 3;
+  if (/陰/.test(w)) return 2;
+  if (/雲/.test(w)) return 1;
+  return 0;
+}
+
+async function khDistricts() {
+  if (!CWA_KEY) {
+    log('沒有 CWA_KEY，高雄分區天氣沿用舊資料');
+    return null;
+  }
+  const url = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-065'
+    + `?Authorization=${CWA_KEY}`
+    + '&elementName=Weather,ProbabilityOfPrecipitation,Temperature&format=JSON';
+  const j = await get(url);
+  const locs = j?.records?.Locations?.[0]?.Location || [];
+  if (!locs.length) throw new Error('高雄分區氣象署回傳沒有 Location');
+
+  const districts = {};
+  for (const loc of locs) {
+    const wxEl = (loc.WeatherElement || []).find((e) => e.ElementName === '天氣現象');
+    const popEl = (loc.WeatherElement || []).find((e) => e.ElementName === '3小時降雨機率');
+    const tempEl = (loc.WeatherElement || []).find((e) => e.ElementName === '溫度');
+    const blocks = (wxEl?.Time || []).slice(0, 4);
+    if (!blocks.length || !popEl || !tempEl) continue;
+
+    const winStart = blocks[0].StartTime;
+    const winEnd = blocks[blocks.length - 1].EndTime;
+
+    let wx = blocks[0].ElementValue?.[0]?.Weather || '';
+    for (const b of blocks) {
+      const w = b.ElementValue?.[0]?.Weather || '';
+      if (wxRank(w) > wxRank(wx)) wx = w;
+    }
+
+    let pop = 0;
+    for (const b of (popEl.Time || []).slice(0, 4)) {
+      pop = Math.max(pop, Number(b.ElementValue?.[0]?.ProbabilityOfPrecipitation) || 0);
+    }
+
+    let lo = Infinity, hi = -Infinity;
+    for (const t of tempEl.Time || []) {
+      if (t.DataTime < winStart || t.DataTime > winEnd) continue;
+      const v = Number(t.ElementValue?.[0]?.Temperature);
+      if (!Number.isFinite(v)) continue;
+      lo = Math.min(lo, v);
+      hi = Math.max(hi, v);
+    }
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) continue;
+
+    districts[loc.LocationName] = { wx, pop, lo, hi };
+  }
+  log(`高雄分區天氣：${Object.keys(districts).length} 個區`);
+  return districts;
+}
+
+/* ──────────────────────────────────────────────────────────────
    二、台股
    盤中（09:00–13:35）：證交所 MIS 即時報價
    收盤後：證交所每日成交資訊（官方數字）
@@ -407,6 +472,7 @@ async function main() {
     updated: `${NOW.date} ${NOW.hm}`,
     span: prev.span ?? null,
     counties: prev.counties ?? {},
+    khDistricts: prev.khDistricts ?? {},
     fest: null,
     stocks: prev.stocks ?? [],
     stockNote: prev.stockNote ?? TAIL,
@@ -418,6 +484,12 @@ async function main() {
     const w = await weather();
     if (w) { out.counties = w.counties; out.span = w.span; }
   } catch (e) { log('天氣失敗，沿用舊的：', e.message); }
+
+  // 高雄分區天氣
+  try {
+    const d = await khDistricts();
+    if (d) out.khDistricts = d;
+  } catch (e) { log('高雄分區天氣失敗，沿用舊的：', e.message); }
 
   // 節慶
   try { out.fest = festToday(); } catch (e) { log('節慶判斷失敗：', e.message); }
@@ -467,6 +539,7 @@ async function main() {
     delete out.counties;
     delete out.span;
   }
+  if (!Object.keys(out.khDistricts || {}).length) delete out.khDistricts;
   if (!out.stocks.length) { delete out.stocks; delete out.stockNote; }
   // mail 與 agenda 這個版本不產生，留給 HTML 裡的說明文字
 
