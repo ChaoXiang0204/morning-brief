@@ -731,7 +731,7 @@
       else if (err.code === err.TIMEOUT) msg = '定位逾時，請手動選地點。';
       state.textContent = msg;
       geoBtn.disabled = false;
-    }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 });
+    }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
   });
 
   var saved = load();
