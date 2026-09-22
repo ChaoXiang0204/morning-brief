@@ -1,0 +1,51 @@
+name: 更新晨報資料
+
+# cron 一律是 UTC，台灣時間要減 8 小時。
+# 左邊註解寫的是台灣時間。
+on:
+  schedule:
+    - cron: '0 23 * * *'    # 台灣 07:00　早上第一次（天氣、節慶、美股收盤）
+    - cron: '5 1 * * 1-5'   # 台灣 09:05　開盤後五分鐘
+    - cron: '0 2 * * 1-5'   # 台灣 10:00
+    - cron: '0 3 * * 1-5'   # 台灣 11:00
+    - cron: '0 4 * * 1-5'   # 台灣 12:00
+    - cron: '0 5 * * 1-5'   # 台灣 13:00
+    - cron: '35 5 * * 1-5'  # 台灣 13:35　收盤後五分鐘
+    - cron: '0 8 * * 1-5'   # 台灣 16:00　官方收盤價覆蓋
+  workflow_dispatch:         # 也可以在 Actions 分頁手動按一次
+
+# 需要寫回 repo 的權限，才能把 data.json commit 上去
+permissions:
+  contents: write
+
+# 同時只跑一個，避免兩次排程搶著 push
+concurrency:
+  group: update-data
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 抓資料、重寫 data.json
+        env:
+          CWA_KEY: ${{ secrets.CWA_KEY }}
+        run: node scripts/update.mjs
+
+      - name: 有變動才 commit
+        run: |
+          git config user.name  "morning-brief bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data.json; then
+            echo "資料沒變，不 commit"
+          else
+            git add data.json
+            git commit -m "資料更新 $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M')"
+            git push
+          fi
