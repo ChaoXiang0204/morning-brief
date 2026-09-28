@@ -15,6 +15,8 @@ index.html                     整個頁面。單一檔案，CSS 與 JS 都內�
 data.json                      資料。由 scripts/update.mjs 重寫，不要手改
 scripts/update.mjs             抓資料的腳本。Node 18 以上，只用內建 fetch，零套件
 .github/workflows/update.yml   排程。cron 一天八次
+manifest.json                  加到主畫面用的 PWA 描述檔
+icon-192.png / icon-512.png / apple-touch-icon.png   桌面圖示，由 scripts/gen-icons.mjs 產生
 LICENSE                        MIT
 ```
 
@@ -123,6 +125,20 @@ order = 用 cycle 當種子洗出來的順序
 
 > 這三個來源都是沒有正式文件的公開端點，隨時可能改或擋。
 > 真的壞掉時頁面不會空白，只會停在最後一次成功的數字——`data.json` 的 `when` 欄會告訴你那是什麼時候的。
+
+---
+
+## 加到主畫面
+
+手機瀏覽器打開部署後的網址，iPhone 用 Safari 的「加入主畫面」、Android 用 Chrome
+的「安裝應用程式」，就會在桌面出現一個圖示，點下去直接開頁面、沒有網址列。
+
+圖示跟 `manifest.json` 都是靜態檔案，不用另外部署或設定。想換圖示風格的話，
+改 `scripts/gen-icons.mjs` 裡的顏色常數或 `paint()` 的形狀參數，重新跑一次：
+
+```
+node scripts/gen-icons.mjs
+```
 
 ---
 
@@ -250,8 +266,8 @@ Claude Code 開這個資料夾時會自己讀它，所以你直接說「幫我�
 
 - **行程與待回信件沒有接**。要接 Google 日曆與 Gmail 需要 OAuth，
   而且那是私人資料，不該放進公開的靜態網站。頁面上那一格留了說明文字。
-- **定位是手動選的**，不是自動抓。`navigator.geolocation` 在部署後的網站上可以用，
-  但需要使用者按下允許，而且氣象署那支 API 只到縣市層級，精確座標意義不大。
+- **定位除了手動選，也可以按「使用目前位置」**用 `navigator.geolocation` 自動抓，
+  但需要 HTTPS（或 `localhost`）加上使用者按下允許；區網 IP 測試會直接失敗，這是瀏覽器機制。
 - **cron 不準時**，見上面的說明。
 - **農曆節日只到 2028 年**。
 - **經文是寫死的 51 節**，想換要直接改 `index.html` 裡的 `V` 陣列。

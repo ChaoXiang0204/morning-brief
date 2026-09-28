@@ -1,0 +1,14 @@
+{
+  "name": "晁的晨報系統",
+  "short_name": "晨報",
+  "description": "每日晨報：天氣、自選股、一節經文。",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#FBF2DE",
+  "theme_color": "#FBF2DE",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
