@@ -234,13 +234,7 @@ Vercel 只是把靜態檔案丟出去，抓資料是 GitHub Actions 在做。
 開 Claude Code → 左下角那個資料夾按鈕（顯示「No folder」的地方）→
 選 `Documents\morning-brief-code`。
 
-第一次先跑設定，它會把 workflow 歸位、建 `.env`、檢查 `.gitignore`：
-
-```
-node scripts/setup-local.mjs
-```
-
-把氣象署授權碼填進根目錄的 `.env`：
+在根目錄建一個 `.env`，把氣象署授權碼填進去（確認 `.gitignore` 有擋住 `.env`）：
 
 ```
 CWA_KEY=CWA-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
